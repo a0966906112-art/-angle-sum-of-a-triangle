@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角形內角和 180°</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 28px;
+            border-radius: 9999px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .sum-display {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .sum-value {
+            color: #2563eb;
+            font-size: 1.5rem;
+        }
+        .presets {
+            display: flex;
+            gap: 8px;
+        }
+        .preset-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            border-color: #94a3b8;
+        }
+
+        /* 齒輪設定按鈕與面板 */
+        .settings-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            z-index: 20;
+            transition: transform 0.2s, background 0.2s;
+            backdrop-filter: blur(8px);
+        }
+        .settings-btn:hover {
+            background: #f1f5f9;
+            transform: scale(1.05);
+        }
+        .settings-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #475569;
+            transition: transform 0.3s;
+        }
+        .settings-btn.active svg {
+            transform: rotate(90deg);
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            z-index: 20;
+            width: 240px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .settings-panel.open {
+            display: flex;
+        }
+        .settings-panel h3 {
+            font-size: 1rem;
+            color: #1e293b;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 8px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95krem;
+            color: #334155;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .checkbox-label input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="sum-display">三角形內角和：<span class="sum-value" id="sumText">180°</span></div>
+            <div class="presets">
+                <button class="preset-btn" onclick="setPreset('equilateral')">正三角形</button>
+                <button class="preset-btn" onclick="setPreset('right')">直角三角形</button>
+                <button class="preset-btn" onclick="setPreset('obtuse')">鈍角三角形</button>
+            </div>
+        </header>
+
+        <!-- 齒輪按鈕 -->
+        <div class="settings-btn" id="settingsBtn" onclick="toggleSettings()">
+            <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58c-0.05,0.3-0.07,0.62-0.07,0.94s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+        </div>
+
+        <!-- 設定面板：遮蔽角度 -->
+        <div class="settings-panel" id="settingsPanel">
+            <h3>遮住角度讓學生計算</h3>
+            <label class="checkbox-label">
+                <input type="checkbox" id="hideA" onchange="draw()"> 遮住 角 A
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="hideB" onchange="draw()"> 遮住 角 B
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="hideC" onchange="draw()"> 遮住 角 C
+            </label>
+        </div>
+
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const sumText = document.getElementById('sumText');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+
+        function toggleSettings() {
+            settingsPanel.classList.toggle('open');
+            settingsBtn.classList.toggle('active');
+        }
+
+        // 點擊畫面其他地方關閉設定面板
+        window.addEventListener('click', (e) => {
+            if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsPanel.classList.remove('open');
+                settingsBtn.classList.remove('active');
+            }
+        });
+
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 初始三角形頂點位置
+        let points = [
+            { x: width * 0.3, y: height * 0.75, label: 'A', color: '#ef4444' }, // 左下
+            { x: width * 0.75, y: height * 0.75, label: 'B', color: '#3b82f6' }, // 右下
+            { x: width * 0.5, y: height * 0.25, label: 'C', color: '#10b981' }  // 上
+        ];
+
+        let activePoint = null;
+        const handleRadius = 24;
+
+        function getDistance(p1, p2) {
+            return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+        }
+
+        function calculateAngles() {
+            const A = points[0], B = points[1], C = points[2];
+            const a = getDistance(B, C);
+            const b = getDistance(A, C);
+            const c = getDistance(A, B);
+
+            const angleA = Math.acos(Math.max(-1, Math.min(1, (b*b + c*c - a*a) / (2 * b * c)))) * (180 / Math.PI);
+            const angleB = Math.acos(Math.max(-1, Math.min(1, (a*a + c*c - b*b) / (2 * a * c)))) * (180 / Math.PI);
+            const angleC = Math.acos(Math.max(-1, Math.min(1, (a*a + b*b - c*c) / (2 * a * b)))) * (180 / Math.PI);
+
+            return [
+                Math.round(angleA),
+                Math.round(angleB),
+                Math.round(angleC)
+            ];
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            const A = points[0], B = points[1], C = points[2];
+            const angles = calculateAngles();
+
+            // 1. 畫出三角形填滿與邊線
+            ctx.beginPath();
+            ctx.moveTo(A.x, A.y);
+            ctx.lineTo(B.x, B.y);
+            ctx.lineTo(C.x, C.y);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            // 2. 繪製頂點和頂點控制圓球
+            points.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, handleRadius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 3;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px system-ui';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(p.label, p.x, p.y);
+            });
+
+            // 取得遮蔽狀態
+            const hideA = document.getElementById('hideA').checked;
+            const hideB = document.getElementById('hideB').checked;
+            const hideC = document.getElementById('hideC').checked;
+
+            // 3. 繪製角度弧線與文字
+            drawAngleArc(A, C, B, angles[0], hideA);
+            drawAngleArc(B, A, C, angles[1], hideB);
+            drawAngleArc(C, B, A, angles[2], hideC);
+
+            // 4. 更新上方總和顯示
+            sumText.innerText = (angles[0] + angles[1] + angles[2]) + '°';
+        }
+
+        function drawAngleArc(vertex, p1, p2, angleVal, isHidden) {
+            const v1x = p1.x - vertex.x;
+            const v1y = p1.y - vertex.y;
+            const v2x = p2.x - vertex.x;
+            const v2y = p2.y - vertex.y;
+
+            const len1 = Math.hypot(v1x, v1y);
+            const len2 = Math.hypot(v2x, v2y);
+            if (len1 === 0 || len2 === 0) return;
+
+            const u1x = v1x / len1, u1y = v1y / len1;
+            const u2x = v2x / len2, u2y = v2y / len2;
+
+            const angle1 = Math.atan2(u1y, u1x);
+            const angle2 = Math.atan2(u2y, u2x);
+
+            let startAngle = angle1;
+            let endAngle = angle2;
+            
+            let diff = endAngle - startAngle;
+            while (diff < 0) diff += Math.PI * 2;
+            while (diff > Math.PI * 2) diff -= Math.PI * 2;
+
+            let isInner = diff <= Math.PI;
+            if (!isInner) {
+                startAngle = angle2;
+                endAngle = angle1;
+            }
+
+            const arcRadius = 45;
+            
+            ctx.beginPath();
+            ctx.arc(vertex.x, vertex.y, arcRadius, startAngle, endAngle);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#64748b';
+            ctx.setLineDash([6, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            let midAngle = (startAngle + endAngle) / 2;
+            if (Math.abs(endAngle - startAngle) > Math.PI) {
+                midAngle += Math.PI;
+            }
+            
+            const textDist = arcRadius + 42;
+            const tx = vertex.x + Math.cos(midAngle) * textDist;
+            const ty = vertex.y + Math.sin(midAngle) * textDist;
+
+            ctx.font = 'bold 64px system-ui';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const displayText = isHidden ? '?' : (angleVal + '°');
+            const textColor = isHidden ? '#ef4444' : '#0f172a';
+
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.strokeText(displayText, tx, ty);
+
+            ctx.fillStyle = textColor;
+            ctx.fillText(displayText, tx, ty);
+        }
+
+        window.setPreset = function(type) {
+            if (type === 'equilateral') {
+                const cx = width / 2, cy = height / 2;
+                const size = Math.min(width, height) * 0.45;
+                points[0] = { x: cx - size * 0.866, y: cy + size * 0.5, label: 'A', color: '#ef4444' };
+                points[1] = { x: cx + size * 0.866, y: cy + size * 0.5, label: 'B', color: '#3b82f6' };
+                points[2] = { x: cx, y: cy - size * 0.5, label: 'C', color: '#10b981' };
+            } else if (type === 'right') {
+                const cx = width / 2, cy = height / 2;
+                points[0] = { x: cx - 200, y: cy + 150, label: 'A', color: '#ef4444' };
+                points[1] = { x: cx + 200, y: cy + 150, label: 'B', color: '#3b82f6' };
+                points[2] = { x: cx - 200, y: cy - 150, label: 'C', color: '#10b981' };
+            } else if (type === 'obtuse') {
+                const cx = width / 2, cy = height / 2;
+                points[0] = { x: cx - 250, y: cy + 150, label: 'A', color: '#ef4444' };
+                points[1] = { x: cx + 250, y: cy + 150, label: 'B', color: '#3b82f6' };
+                points[2] = { x: cx - 50, y: cy - 120, label: 'C', color: '#10b981' };
+            }
+            draw();
+        };
+
+        function getPointerPos(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX, y: clientY };
+        }
+
+        function onPointerDown(e) {
+            const pos = getPointerPos(e);
+            for (let i = 0; i < points.length; i++) {
+                if (getDistance(pos, points[i]) < handleRadius + 15) {
+                    activePoint = points[i];
+                    break;
+                }
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!activePoint) return;
+            const pos = getPointerPos(e);
+            activePoint.x = pos.x;
+            activePoint.y = pos.y;
+            draw();
+        }
+
+        function onPointerUp() {
+            activePoint = null;
+        }
+
+        canvas.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        canvas.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+
+        draw();
+    </script>
+</body>
+</html>
