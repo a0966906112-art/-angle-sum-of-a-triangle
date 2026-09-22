@@ -133,7 +133,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 0.95krem;
+            font-size: 0.95rem;
             color: #334155;
             cursor: pointer;
             font-weight: 500;
@@ -237,13 +237,13 @@
 
             const angleA = Math.acos(Math.max(-1, Math.min(1, (b*b + c*c - a*a) / (2 * b * c)))) * (180 / Math.PI);
             const angleB = Math.acos(Math.max(-1, Math.min(1, (a*a + c*c - b*b) / (2 * a * c)))) * (180 / Math.PI);
-            const angleC = Math.acos(Math.max(-1, Math.min(1, (a*a + b*b - c*c) / (2 * a * b)))) * (180 / Math.PI);
 
-            return [
-                Math.round(angleA),
-                Math.round(angleB),
-                Math.round(angleC)
-            ];
+            const roundA = Math.round(angleA);
+            const roundB = Math.round(angleB);
+            // 讓第三個角強制利用 180 度扣掉前兩個角，確保內角和永遠嚴格等於 180°[cite: 1]
+            const roundC = 180 - roundA - roundB;
+
+            return [roundA, roundB, roundC];
         }
 
         function draw() {
